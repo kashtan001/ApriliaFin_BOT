@@ -223,8 +223,8 @@ def _add_images_to_pdf(pdf_bytes: bytes, template_name: str) -> BytesIO:
             row_71 = (71 - 1) // 25
             col_71 = (71 - 1) % 25
             
-            x_71 = (col_71 - 2 + 4 - 1.5 - 1) * cell_width_mm * mm  # на 2.5 клетки влево (было 1.5, добавили еще 1)
-            y_71 = (297 - (row_71 * cell_height_mm + cell_height_mm) - 0.25 * cell_height_mm - 2 * cell_height_mm) * mm  # на 2 клетки вниз
+            x_71 = (col_71 - 2 + 4 - 1.5 - 1 + 0.25) * cell_width_mm * mm  # на 2.5 клетки влево + 1/4 клетки вправо
+            y_71 = (297 - (row_71 * cell_height_mm + cell_height_mm) - 0.25 * cell_height_mm - 1 * cell_height_mm - 0.5 * cell_height_mm) * mm  # на 1 клетку вниз + 0.5 клетки вверх
             
             overlay_canvas.drawImage("logo.png", x_71, y_71, 
                                    width=logo_scaled_width*mm, height=logo_scaled_height*mm,
@@ -242,7 +242,7 @@ def _add_images_to_pdf(pdf_bytes: bytes, template_name: str) -> BytesIO:
             col_590 = (590 - 1) % 25   # колонка 14
             
             x_590_center = (col_590 + 0.5) * cell_width_mm * mm
-            y_590_center = (297 - (row_590 + 0.5) * cell_height_mm) * mm
+            y_590_center = (297 - (row_590 + 0.5) * cell_height_mm - 4 * cell_height_mm) * mm  # на 4 клетки вниз
             
             x_590 = x_590_center - (seal_scaled_width * mm / 2)
             y_590 = y_590_center - (seal_scaled_height * mm / 2)
@@ -263,7 +263,7 @@ def _add_images_to_pdf(pdf_bytes: bytes, template_name: str) -> BytesIO:
             col_593 = (593 - 1) % 25   # колонка 17
             
             x_593_center = (col_593 + 0.5) * cell_width_mm * mm
-            y_593_center = (297 - (row_593 + 0.5) * cell_height_mm) * mm
+            y_593_center = (297 - (row_593 + 0.5) * cell_height_mm - 4 * cell_height_mm) * mm  # на 4 клетки вниз
             
             x_593 = x_593_center - (sing1_scaled_width * mm / 2)
             y_593 = y_593_center - (sing1_scaled_height * mm / 2)
@@ -305,8 +305,8 @@ def _add_images_to_pdf(pdf_bytes: bytes, template_name: str) -> BytesIO:
             row_71 = (71 - 1) // 25
             col_71 = (71 - 1) % 25
             
-            x_71 = (col_71 - 2 + 4 - 1.5 - 1) * cell_width_mm * mm  # на 2.5 клетки влево (было 1.5, добавили еще 1)
-            y_71 = (297 - (row_71 * cell_height_mm + cell_height_mm) - 0.25 * cell_height_mm - 2 * cell_height_mm) * mm  # на 2 клетки вниз
+            x_71 = (col_71 - 2 + 4 - 1.5 - 1 + 0.25) * cell_width_mm * mm  # на 2.5 клетки влево + 1/4 клетки вправо
+            y_71 = (297 - (row_71 * cell_height_mm + cell_height_mm) - 0.25 * cell_height_mm - 1 * cell_height_mm - 0.5 * cell_height_mm) * mm  # на 1 клетку вниз + 0.5 клетки вверх
             
             overlay_canvas.drawImage("logo.png", x_71, y_71, 
                                    width=logo_scaled_width*mm, height=logo_scaled_height*mm,
@@ -387,8 +387,8 @@ def _add_images_to_pdf(pdf_bytes: bytes, template_name: str) -> BytesIO:
             row_71 = (71 - 1) // 25
             col_71 = (71 - 1) % 25
             
-            x_71 = (col_71 - 2 + 4 - 1.5 - 1) * cell_width_mm * mm  # на 2.5 клетки влево (было 1.5, добавили еще 1)
-            y_71 = (297 - (row_71 * cell_height_mm + cell_height_mm) - 0.25 * cell_height_mm - 2 * cell_height_mm) * mm  # на 2 клетки вниз
+            x_71 = (col_71 - 2 + 4 - 1.5 - 1 + 0.25) * cell_width_mm * mm  # на 2.5 клетки влево + 1/4 клетки вправо
+            y_71 = (297 - (row_71 * cell_height_mm + cell_height_mm) - 0.25 * cell_height_mm - 1 * cell_height_mm - 0.5 * cell_height_mm) * mm  # на 1 клетку вниз + 0.5 клетки вверх
             
             overlay_canvas.drawImage("logo.png", x_71, y_71, 
                                    width=logo_scaled_width*mm, height=logo_scaled_height*mm,
@@ -476,8 +476,8 @@ def _add_images_to_pdf(pdf_bytes: bytes, template_name: str) -> BytesIO:
             row_71 = (71 - 1) // 25
             col_71 = (71 - 1) % 25
             
-            x_71 = (col_71 - 2 + 4 - 1.5 - 1) * cell_width_mm * mm  # на 2.5 клетки влево (было 1.5, добавили еще 1)
-            y_71 = (297 - (row_71 * cell_height_mm + cell_height_mm) - 0.25 * cell_height_mm - 2 * cell_height_mm) * mm  # на 2 клетки вниз
+            x_71 = (col_71 - 2 + 4 - 1.5 - 1 + 0.25) * cell_width_mm * mm  # на 2.5 клетки влево + 1/4 клетки вправо
+            y_71 = (297 - (row_71 * cell_height_mm + cell_height_mm) - 0.25 * cell_height_mm - 1 * cell_height_mm - 0.5 * cell_height_mm) * mm  # на 1 клетку вниз + 0.5 клетки вверх
             
             overlay_canvas.drawImage("logo.png", x_71, y_71, 
                                    width=logo_scaled_width*mm, height=logo_scaled_height*mm,
@@ -542,8 +542,8 @@ def _add_images_to_pdf(pdf_bytes: bytes, template_name: str) -> BytesIO:
             seal_width_mm = seal_img.width * 0.264583
             seal_height_mm = seal_img.height * 0.264583
             
-            seal_scaled_width = seal_width_mm / 7
-            seal_scaled_height = seal_height_mm / 7
+            seal_scaled_width = (seal_width_mm / 7) * 1.3  # увеличение в 1.3 раза
+            seal_scaled_height = (seal_height_mm / 7) * 1.3  # увеличение в 1.3 раза
             
             row_682 = (682 - 1) // 25
             col_682 = (682 - 1) % 25
