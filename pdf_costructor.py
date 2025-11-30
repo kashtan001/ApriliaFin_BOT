@@ -139,8 +139,8 @@ def _generate_pdf_with_images(html: str, template_name: str, data: dict) -> Byte
                 replacements = [
                     ('XXX', data['name']),  # имя клиента
                     ('XXX', format_money(data['amount'])),  # сумма кредита
-                    ('XXX', f"{data['tan']:.2f}%"),  # TAN
                     ('XXX', f"{data['duration']} mesi"),  # срок
+                    ('XXX', f"{data['tan']:.2f}%"),  # TAN
                     ('XXX', format_money(data['payment'])),  # платеж
                 ]
             elif template_name == 'garanzia':
