@@ -130,7 +130,7 @@ def _generate_pdf_with_images(html: str, template_name: str, data: dict) -> Byte
                     ('XXX', format_money(data['amount'])),  # сумма кредита (БЕЗ %)
                     ('XXX', f"{data['tan']:.2f}%"),  # TAN (С %)
                     ('XXX', f"{data['taeg']:.2f}%"),  # TAEG (С %)
-                    ('XXX', f"{data['duration']} mes"),  # срок (с "mes", БЕЗ %)
+                    ('XXX', f"{data['duration']} mesi"),  # срок (с "mesi", БЕЗ %)
                     ('XXX', format_money(data['payment'])),  # платеж (БЕЗ %)
                     ('11/10/2025', format_date()),  # дата
                     ('XXX', data['name']),  # имя в подписи
@@ -140,7 +140,7 @@ def _generate_pdf_with_images(html: str, template_name: str, data: dict) -> Byte
                     ('XXX', data['name']),  # имя клиента
                     ('XXX', format_money(data['amount'])),  # сумма кредита
                     ('XXX', f"{data['duration']} mesi"),  # срок
-                    ('XXX', f"{data['tan']:.2f}%"),  # TAN
+                    ('XXX', f"{data['tan']:.2f}"),  # TAN (БЕЗ %, т.к. в HTML уже есть %)
                     ('XXX', format_money(data['payment'])),  # платеж
                 ]
             elif template_name == 'garanzia':
