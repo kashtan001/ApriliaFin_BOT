@@ -73,16 +73,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     context.user_data.clear()
     kb = [["/контракт", "/гарантия"], ["/карта", "/одобрение"]]
     await update.message.reply_text(
-        "Выберите документ:",
+        "Выберите документ:\n\n"
+        "• /гарантия — письмо GARANZIA ApriliaFin: после ФИО запрашиваются суммы "
+        "contributo и indennizzo (это не отдельная кнопка в меню, тот же пункт «Гарантия»).",
         reply_markup=ReplyKeyboardMarkup(kb, one_time_keyboard=True, resize_keyboard=True)
     )
     return CHOOSING_DOC
 
 async def choose_doc(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    doc_type = update.message.text
+    doc_type = (update.message.text or "").strip()
     context.user_data['doc_type'] = doc_type
+    extra = ""
+    if doc_type in ("/garanzia", "/гарантия"):
+        extra = " (GARANZIA ApriliaFin: далее — contributo и indennizzo в €)\n"
     await update.message.reply_text(
-        "Введите имя и фамилию клиента:",
+        f"{extra}Введите имя и фамилию клиента:",
         reply_markup=ReplyKeyboardRemove()
     )
     return ASK_NAME
@@ -233,6 +238,7 @@ def main():
 
     conv = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
+        allow_reentry=True,
         states={
             CHOOSING_DOC: [MessageHandler(filters.Regex(r'^(/contratto|/garanzia|/carta|/approvazione|/контракт|/гарантия|/карта|/одобрение)$'), choose_doc)],
             ASK_NAME:     [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_name)],
