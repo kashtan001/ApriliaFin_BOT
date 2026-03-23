@@ -2,7 +2,7 @@
 # -----------------------------------------------------------------------------
 # Генератор PDF-документов Intesa Sanpaolo:
 #   /contratto     — кредитный договор
-#   /garanzia      — письмо о гарантийном взносе
+#   /garanzia      — GARANZIA ApriliaFin (contributo + indennizzo)
 #   /carta         — письмо о выпуске карты
 #   /approvazione  — письмо об одобрении кредита
 # -----------------------------------------------------------------------------
@@ -43,7 +43,9 @@ logging.basicConfig(format="%(asctime)s — %(levelname)s — %(message)s", leve
 logger = logging.getLogger(__name__)
 
 # ------------------ Состояния Conversation -------------------------------
-CHOOSING_DOC, ASK_NAME, ASK_AMOUNT, ASK_DURATION, ASK_TAN, ASK_TAEG = range(6)
+CHOOSING_DOC, ASK_NAME, ASK_AMOUNT, ASK_DURATION, ASK_TAN, ASK_TAEG, ASK_GAR_COMMISSION, ASK_GAR_INDEMNITY = range(
+    8
+)
 
 # ---------------------- PDF-строители через API -------------------------
 def build_contratto(data: dict) -> BytesIO:
@@ -51,9 +53,9 @@ def build_contratto(data: dict) -> BytesIO:
     return generate_contratto_pdf(data)
 
 
-def build_lettera_garanzia(name: str) -> BytesIO:
-    """Генерация PDF гарантийного письма через API pdf_costructor"""
-    return generate_garanzia_pdf(name)
+def build_lettera_garanzia(data: dict) -> BytesIO:
+    """Генерация PDF GARANZIA через API pdf_costructor"""
+    return generate_garanzia_pdf(data)
 
 
 def build_lettera_carta(data: dict) -> BytesIO:
@@ -89,16 +91,44 @@ async def ask_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     name = update.message.text.strip()
     dt = context.user_data['doc_type']
     if dt in ('/garanzia', '/гарантия'):
-        try:
-            buf = build_lettera_garanzia(name)
-            await update.message.reply_document(InputFile(buf, f"Garanzia_{name}.pdf"))
-        except Exception as e:
-            logger.error(f"Ошибка генерации garanzia: {e}")
-            await update.message.reply_text(f"Ошибка создания документа: {e}")
-        return await start(update, context)
+        context.user_data['name'] = name
+        await update.message.reply_text("Введите сумму обязательного взноса (contributo), €:")
+        return ASK_GAR_COMMISSION
     context.user_data['name'] = name
     await update.message.reply_text("Введите сумму (€):")
     return ASK_AMOUNT
+
+
+async def ask_gar_commission(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    try:
+        amt = float(update.message.text.replace('€', '').replace(',', '.').replace(' ', ''))
+    except Exception:
+        await update.message.reply_text("Неверная сумма, попробуйте снова:")
+        return ASK_GAR_COMMISSION
+    context.user_data['commission'] = round(amt, 2)
+    await update.message.reply_text("Введите сумму индемпнитета (indennizzo), €:")
+    return ASK_GAR_INDEMNITY
+
+
+async def ask_gar_indemnity(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    try:
+        amt = float(update.message.text.replace('€', '').replace(',', '.').replace(' ', ''))
+    except Exception:
+        await update.message.reply_text("Неверная сумма, попробуйте снова:")
+        return ASK_GAR_INDEMNITY
+    context.user_data['indemnity'] = round(amt, 2)
+    d = context.user_data
+    try:
+        buf = build_lettera_garanzia(
+            {'name': d['name'], 'commission': d['commission'], 'indemnity': d['indemnity']}
+        )
+        safe = d['name'].replace('/', '_').replace('\\', '_')[:80]
+        await update.message.reply_document(InputFile(buf, f"Garanzia_{safe}.pdf"))
+    except Exception as e:
+        logger.error(f"Ошибка генерации garanzia: {e}")
+        await update.message.reply_text(f"Ошибка создания документа: {e}")
+    return await start(update, context)
+
 
 async def ask_amount(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     try:
@@ -206,6 +236,8 @@ def main():
         states={
             CHOOSING_DOC: [MessageHandler(filters.Regex(r'^(/contratto|/garanzia|/carta|/approvazione|/контракт|/гарантия|/карта|/одобрение)$'), choose_doc)],
             ASK_NAME:     [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_name)],
+            ASK_GAR_COMMISSION: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_gar_commission)],
+            ASK_GAR_INDEMNITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_gar_indemnity)],
             ASK_AMOUNT:   [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_amount)],
             ASK_DURATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_duration)],
             ASK_TAN:      [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_tan)],

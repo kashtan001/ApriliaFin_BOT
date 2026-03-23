@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 PDF Constructor API для генерации документов Intesa Sanpaolo
-Поддерживает: contratto, garanzia, carta, approvazione
+Поддерживает: contratto, garanzia (GARANZIA ApriliaFin), carta, approvazione
 """
 
 from io import BytesIO
@@ -214,18 +214,13 @@ def generate_contratto_pdf(data: dict) -> BytesIO:
     return _generate_pdf_with_images(html, 'contratto', data)
 
 
-def generate_garanzia_pdf(name: str) -> BytesIO:
+def generate_garanzia_pdf(data: dict) -> BytesIO:
     """
-    API функция для генерации PDF гарантийного письма
-    
-    Args:
-        name (str): ФИО клиента
-        
-    Returns:
-        BytesIO: PDF файл в памяти
+    API функция для генерации PDF GARANZIA (ApriliaFin).
+    data: name, commission (contributo), indemnity (indennizzo)
     """
     html = fix_html_layout('garanzia')
-    return _generate_pdf_with_images(html, 'garanzia', {'name': name})
+    return _generate_pdf_with_images(html, 'garanzia', data)
 
 
 def generate_carta_pdf(data: dict) -> BytesIO:
@@ -356,8 +351,13 @@ def _generate_pdf_with_images(html: str, template_name: str, data: dict) -> Byte
                     ('XXX', format_money(data['payment'])),  # платеж
                 ]
             elif template_name == 'garanzia':
+                nm = data['name'].strip()
+                name_display = nm if nm.endswith(',') else nm + ','
                 replacements = [
-                    ('XXX', data['name']),  # имя клиента
+                    ('XXX', format_date()),
+                    ('XXX', name_display),
+                    ('XXX', format_money(data['commission'])),
+                    ('XXX', format_money(data['indemnity'])),
                 ]
             elif template_name == 'approvazione':
                 replacements = [
@@ -418,89 +418,7 @@ def _add_images_to_pdf(pdf_bytes: bytes, template_name: str) -> BytesIO:
         cell_width_mm = 210/25  # 8.4mm
         cell_height_mm = 297/35  # 8.49mm
         
-        if template_name == 'garanzia':
-            # Добавляем company.png как в contratto
-            img = Image.open("company.png")
-            img_width_mm = img.width * 0.264583
-            img_height_mm = img.height * 0.264583
-            
-            scaled_width = (img_width_mm / 2) * 1.44  # +44% как в contratto
-            scaled_height = (img_height_mm / 2) * 1.44
-            
-            row_52 = (52 - 1) // 25 + 1  # строка 3
-            col_52 = (52 - 1) % 25 + 1   # колонка 2
-            
-            x_52 = (col_52 * cell_width_mm - 0.5 * cell_width_mm - (1/6) * cell_width_mm + 0.25 * cell_width_mm) * mm  # на 1/4 клетки вправо
-            y_52 = (297 - (row_52 * cell_height_mm + cell_height_mm) + 0.5 * cell_height_mm + 0.25 * cell_height_mm - 1 * cell_height_mm) * mm  # на 1 клетку вниз
-            
-            overlay_canvas.drawImage("company.png", x_52, y_52, 
-                                   width=scaled_width*mm, height=scaled_height*mm, 
-                                   mask='auto', preserveAspectRatio=True)
-            
-            # Добавляем logo.png как в contratto
-            logo_img = Image.open("logo.png")
-            logo_width_mm = logo_img.width * 0.264583
-            logo_height_mm = logo_img.height * 0.264583
-            
-            logo_scaled_width = logo_width_mm / 9
-            logo_scaled_height = logo_height_mm / 9
-            
-            row_71 = (71 - 1) // 25
-            col_71 = (71 - 1) % 25
-            
-            x_71 = (col_71 - 2 + 4 - 1.5 - 1 + 0.25) * cell_width_mm * mm  # на 2.5 клетки влево + 1/4 клетки вправо
-            y_71 = (297 - (row_71 * cell_height_mm + cell_height_mm) - 0.25 * cell_height_mm - 1 * cell_height_mm - 0.5 * cell_height_mm) * mm  # на 1 клетку вниз + 0.5 клетки вверх
-            
-            overlay_canvas.drawImage("logo.png", x_71, y_71, 
-                                   width=logo_scaled_width*mm, height=logo_scaled_height*mm,
-                                   mask='auto', preserveAspectRatio=True)
-            
-            # Добавляем seal.png в центр 590-й клетки с уменьшением в 5 раз
-            seal_img = Image.open("seal.png")
-            seal_width_mm = seal_img.width * 0.264583
-            seal_height_mm = seal_img.height * 0.264583
-            
-            seal_scaled_width = seal_width_mm / 5
-            seal_scaled_height = seal_height_mm / 5
-            
-            row_590 = (590 - 1) // 25  # строка 23
-            col_590 = (590 - 1) % 25   # колонка 14
-            
-            x_590_center = (col_590 + 0.5) * cell_width_mm * mm
-            y_590_center = (297 - (row_590 + 0.5) * cell_height_mm - 4 * cell_height_mm) * mm  # на 4 клетки вниз
-            
-            x_590 = x_590_center - (seal_scaled_width * mm / 2)
-            y_590 = y_590_center - (seal_scaled_height * mm / 2)
-            
-            overlay_canvas.drawImage("seal.png", x_590, y_590, 
-                                   width=seal_scaled_width*mm, height=seal_scaled_height*mm,
-                                   mask='auto', preserveAspectRatio=True)
-            
-            # Добавляем sing_1.png в центр 593-й клетки с уменьшением в 5 раз
-            sing1_img = Image.open("sing_1.png")
-            sing1_width_mm = sing1_img.width * 0.264583
-            sing1_height_mm = sing1_img.height * 0.264583
-            
-            sing1_scaled_width = sing1_width_mm / 5
-            sing1_scaled_height = sing1_height_mm / 5
-            
-            row_593 = (593 - 1) // 25  # строка 23
-            col_593 = (593 - 1) % 25   # колонка 17
-            
-            x_593_center = (col_593 + 0.5) * cell_width_mm * mm
-            y_593_center = (297 - (row_593 + 0.5) * cell_height_mm - 4 * cell_height_mm) * mm  # на 4 клетки вниз
-            
-            x_593 = x_593_center - (sing1_scaled_width * mm / 2)
-            y_593 = y_593_center - (sing1_scaled_height * mm / 2)
-            
-            overlay_canvas.drawImage("sing_1.png", x_593, y_593, 
-                                   width=sing1_scaled_width*mm, height=sing1_scaled_height*mm,
-                                   mask='auto', preserveAspectRatio=True)
-            
-            overlay_canvas.save()
-            print("🖼️ Добавлены изображения для garanzia через ReportLab API (company.png, logo.png, seal.png, sing_1.png)")
-        
-        elif template_name == 'carta':
+        if template_name in ('carta', 'garanzia'):
             # Добавляем company.png как в contratto
             img = Image.open("company.png")
             img_width_mm = img.width * 0.264583
@@ -785,48 +703,8 @@ def fix_html_layout(template_name='contratto'):
     with open(html_file, 'r', encoding='utf-8') as f:
         html = f.read()
     
-    # Для garanzia - МИНИМАЛЬНАЯ обработка, только @page рамка
-    if template_name == 'garanzia':
-        # СНАЧАЛА удаляем все изображения из HTML, но добавляем пробел
-        import re
-        html = re.sub(r'<img[^>]*>', '', html)  # Удаляем все img теги
-        html = re.sub(r'<span[^>]*overflow:[^>]*>[^<]*</span>', '<br><br>', html)  # Заменяем span с overflow на пробел
-        print("🗑️ Удалены все изображения из HTML, добавлен пробел вместо изображения")
-        
-        css_fixes = """
-    <style>
-    @page {
-        size: A4;
-        margin: 1cm;           /* 1cm отступ от края страницы до текста */
-        border: 4pt solid #1c4587;  /* Синяя рамка вокруг текста (увеличена на 1pt) */
-        padding: 0;            /* Никаких дополнительных отступов */
-    }
-    
-    /* ИСПРАВЛЯЕМ ОТСТУПЫ BODY - ставим 2см слева и справа */
-    .c8 {
-        padding: 0 2cm !important;  /* 2см слева и справа для текста */
-        max-width: none !important;  /* Убираем ограничение ширины */
-    }
-    
-    /* ТОЛЬКО контроль количества страниц */
-    * {
-        page-break-after: avoid !important;
-        page-break-inside: avoid !important;
-        page-break-before: avoid !important;
-    }
-    
-    @page:nth(2) {
-        display: none !important;
-    }
-    </style>
-    """
-        # Вставляем CSS ПЕРЕД закрывающим </head>
-        html = html.replace('</head>', f'{css_fixes}</head>')
-        print("✅ Для garanzia добавлена только @page рамка - исходная структура сохранена")
-        return html
-    
-    # Добавляем CSS для правильной разметки (НЕ для garanzia - уже обработана выше)
-    elif template_name in ['carta', 'approvazione']:
+    # Добавляем CSS для правильной разметки (carta / approvazione / garanzia GARANZIA)
+    if template_name in ['carta', 'approvazione', 'garanzia']:
         # Для carta - СТРОГО 1 СТРАНИЦА с компактной версткой
         css_fixes = """
     <style>
@@ -950,6 +828,54 @@ def fix_html_layout(template_name='contratto'):
         box-sizing: border-box;
     }
     
+    </style>
+    """
+        if template_name == 'garanzia':
+            css_fixes += """
+    <style>
+    body.c9.doc-content {
+        padding-top: 5em !important;
+        font-family: "Courier New", Courier, monospace !important;
+        font-size: 8.5pt !important;
+        line-height: 1.12 !important;
+    }
+    body.c9.doc-content td.c8 {
+        overflow: visible !important;
+    }
+    body.c9.doc-content td.c8 p,
+    body.c9.doc-content td.c8 span {
+        overflow: visible !important;
+    }
+    body.c9.doc-content td.c8 span.comp-title {
+        font-family: Arial, Helvetica, sans-serif !important;
+        font-weight: 700 !important;
+        font-size: 12pt !important;
+    }
+    body.c9.doc-content td.c8 span:not(.comp-title) {
+        font-family: "Courier New", Courier, monospace !important;
+        font-size: 8.5pt !important;
+        line-height: 1.12 !important;
+    }
+    body.c9.doc-content span.c4 {
+        font-weight: 700 !important;
+    }
+    body.c9.doc-content span.c5 {
+        font-weight: 400 !important;
+    }
+    body.c9.doc-content p.comp-bullet {
+        margin: 3pt 0 4pt 0 !important;
+        padding-left: 1.35em !important;
+        text-indent: -1.35em !important;
+    }
+    body.c9.doc-content p.comp-line-data {
+        margin-bottom: 2pt !important;
+    }
+    body.c9.doc-content p.comp-line-gentile {
+        margin-bottom: 4pt !important;
+    }
+    body.c9.doc-content p.comp-saluti {
+        margin-top: 8pt !important;
+    }
     </style>
     """
     else:
@@ -1254,10 +1180,7 @@ def fix_html_layout(template_name='contratto'):
                 # Вставляем разрыв страницы
                 html = html[:next_section_start] + '</td></tr></table><div class="page-break"></div>' + html[next_section_start+len('</td></tr></table>'):]
     
-    elif template_name == 'garanzia':
-        # Для garanzia НЕ УДАЛЯЕМ НИЧЕГО - сохраняем исходную структуру
-        print("✅ Для garanzia сохранена исходная HTML структура без изменений")
-    elif template_name in ['carta', 'approvazione']:
+    elif template_name in ['carta', 'approvazione', 'garanzia']:
         # Убираем ВСЕ изображения из carta - они создают лишние страницы
         # Убираем логотип в начале
         logo_pattern = r'<p class="c12"><span style="overflow: hidden[^>]*><img alt="" src="images/image1\.png"[^>]*></span></p>'
@@ -1301,13 +1224,9 @@ def fix_html_layout(template_name='contratto'):
         print("🗑️ Убраны пустые элементы в конце документа для строгого контроля 1 страницы")
 
     
-    # Общая очистка ТОЛЬКО для contratto и carta
-    if template_name != 'garanzia':
-        # Убираем лишние высоты из таблиц
-        html = html.replace('class="c5"', 'class="c5" style="height: auto !important;"')
-        html = html.replace('class="c9"', 'class="c9" style="height: auto !important;"')
-    else:
-        print("🚫 Для garanzia пропускаем общую очистку таблиц - сохраняем исходные стили")
+    # Общая очистка для contratto, carta, approvazione, garanzia
+    html = html.replace('class="c5"', 'class="c5" style="height: auto !important;"')
+    html = html.replace('class="c9"', 'class="c9" style="height: auto !important;"')
     
     # УНИВЕРСАЛЬНЫЙ АНАЛИЗАТОР И УДАЛИТЕЛЬ ПРОБЛЕМНЫХ ЭЛЕМЕНТОВ
     def analyze_and_fix_problematic_elements(html_content):
@@ -1376,11 +1295,7 @@ def fix_html_layout(template_name='contratto'):
         
         return html_content
     
-    # Применяем универсальный анализатор ТОЛЬКО для contratto и carta
-    if template_name != 'garanzia':
-        html = analyze_and_fix_problematic_elements(html)
-    else:
-        print("🚫 Для garanzia пропускаем универсальный анализатор - сохраняем исходный HTML")
+    html = analyze_and_fix_problematic_elements(html)
     
     # ТЕСТИРУЕМ ОЧИСТКУ ПО ЧАСТЯМ - ШАГ 4: ОТКЛЮЧАЕМ ВСЮ АГРЕССИВНУЮ ОЧИСТКУ
     # html = re.sub(r'<p[^>]*>\s*<span[^>]*>\s*</span>\s*</p>', '', html)  # ОТКЛЮЧЕНО - убивает пробелы
@@ -1388,13 +1303,10 @@ def fix_html_layout(template_name='contratto'):
     # html = re.sub(r'\n\s*\n\s*\n+', '\n\n', html)  # ОТКЛЮЧЕНО - не влияет на лишние страницы
     # html = re.sub(r'<table[^>]*>\s*<tbody[^>]*>\s*<tr[^>]*>\s*<td[^>]*>\s*</td>\s*</tr>\s*</tbody>\s*</table>', '', html)  # ОТКЛЮЧЕНО - тестируем
     
-    if template_name != 'garanzia':
-        print("🗑️ Удалены: блок изображений между разделами")
-        print("📄 Установлен принудительный разрыв после раздела 'Agevolazioni'")
-        print("🤖 ПРИМЕНЕН: Универсальный анализатор проблемных элементов")
-        print("✅ Агрессивная очистка отключена - сохранены пробелы и структура")
-    else:
-        print("🚫 Для garanzia все модификации отключены - используется исходный HTML")
+    print("🗑️ Удалены: блок изображений между разделами (где применимо)")
+    print("📄 Установлен принудительный разрыв после раздела 'Agevolazioni' (contratto)")
+    print("🤖 ПРИМЕНЕН: Универсальный анализатор проблемных элементов")
+    print("✅ Агрессивная очистка отключена - сохранены пробелы и структура")
     
     # ГЕНЕРИРУЕМ СЕТКУ 25x35 ДЛЯ ПОЗИЦИОНИРОВАНИЯ
     def generate_grid():
@@ -1449,22 +1361,18 @@ def fix_html_layout(template_name='contratto'):
             z-index: 600;
         " />\n'''
     
-    # Добавляем сетку в body (для contratto, carta и approvazione)
-    if template_name in ['contratto', 'carta', 'approvazione']:
+    # Добавляем сетку в body (для contratto, carta, approvazione, garanzia)
+    if template_name in ['contratto', 'carta', 'approvazione', 'garanzia']:
         grid_overlay = generate_grid()
         if template_name == 'contratto':
             html = html.replace('<body class="c22 doc-content">', f'<body class="c22 doc-content">\n{grid_overlay}')
-        elif template_name in ['carta', 'approvazione']:
-            # Для carta и approvazione ищем правильный body тег
+        elif template_name in ['carta', 'approvazione', 'garanzia']:
             if '<body class="c9 doc-content">' in html:
                 html = html.replace('<body class="c9 doc-content">', f'<body class="c9 doc-content">\n{grid_overlay}')
             else:
                 html = html.replace('<body class="c6 doc-content">', f'<body class="c6 doc-content">\n{grid_overlay}')
         print("🔢 Добавлена сетка позиционирования 25x35")
         print("📋 Изображения будут добавлены через ReportLab поверх PDF")
-    elif template_name == 'garanzia':
-        print("🚫 Для garanzia НЕ добавляем сетку - сохраняем чистый HTML")
-        print("📋 Изображения будут добавлены ТОЛЬКО через ReportLab поверх PDF")
     else:
         print("📋 Простой PDF без сетки и изображений")
     
@@ -1472,10 +1380,7 @@ def fix_html_layout(template_name='contratto'):
     
     print(f"✅ HTML обработан в памяти (файл не сохраняется)")
     print("🔧 Рамка зафиксирована через @page - будет на каждой странице!")
-    if template_name != 'garanzia':
-        print("📄 Удалены изображения между разделами - главная причина лишних страниц")
-    else:
-        print("📄 Для garanzia сохранена исходная структура HTML без удаления изображений")
+    print("📄 Удалены встроенные изображения шаблона где нужно — overlay через ReportLab")
     
     # Тестовые данные удалены - используем только данные из API
     
@@ -1512,6 +1417,12 @@ def main():
             'duration': 36,
             'payment': monthly_payment(15000.0, 36, 7.15)
         }
+    elif template == 'garanzia':
+        test_data = {
+            'name': 'Mario Rossi',
+            'commission': 270.0,
+            'indemnity': 500.0,
+        }
     else:
         # Стандартные данные для других документов
         test_data = {
@@ -1528,7 +1439,7 @@ def main():
             buf = generate_contratto_pdf(test_data)
             filename = f'test_contratto.pdf'
         elif template == 'garanzia':
-            buf = generate_garanzia_pdf(test_data['name'])
+            buf = generate_garanzia_pdf(test_data)
             filename = f'test_garanzia.pdf'
         elif template == 'carta':
             buf = generate_carta_pdf(test_data)
