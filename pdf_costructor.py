@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 PDF Constructor API для генерации документов Intesa Sanpaolo
-Поддерживает: contratto, garanzia (GARANZIA ApriliaFin), carta, approvazione
+Поддерживает: contratto, garanzia, compensazione, carta, approvazione
 """
 
 from io import BytesIO
@@ -214,13 +214,16 @@ def generate_contratto_pdf(data: dict) -> BytesIO:
     return _generate_pdf_with_images(html, 'contratto', data)
 
 
-def generate_garanzia_pdf(data: dict) -> BytesIO:
-    """
-    API функция для генерации PDF GARANZIA (ApriliaFin).
-    data: name, commission (contributo), indemnity (indennizzo)
-    """
+def generate_garanzia_pdf(name: str) -> BytesIO:
+    """Письмо о гарантийном взносе (имя клиента)."""
     html = fix_html_layout('garanzia')
-    return _generate_pdf_with_images(html, 'garanzia', data)
+    return _generate_pdf_with_images(html, 'garanzia', {'name': name})
+
+
+def generate_compensazione_pdf(data: dict) -> BytesIO:
+    """Компенсационное письмо GARANZIA: name, commission, indemnity."""
+    html = fix_html_layout('compensazione')
+    return _generate_pdf_with_images(html, 'compensazione', data)
 
 
 def generate_carta_pdf(data: dict) -> BytesIO:
@@ -276,8 +279,8 @@ def _generate_pdf_with_images(html: str, template_name: str, data: dict) -> Byte
         from PyPDF2 import PdfReader, PdfWriter
         from PIL import Image
         
-        # Заменяем XXX на реальные данные для contratto, carta, garanzia и approvazione
-        if template_name in ['contratto', 'carta', 'garanzia', 'approvazione']:
+        # Заменяем XXX на реальные данные для contratto, carta, garanzia, compensazione и approvazione
+        if template_name in ['contratto', 'carta', 'garanzia', 'compensazione', 'approvazione']:
             replacements = []
             if template_name == 'contratto':
                 replacements = [
@@ -351,6 +354,10 @@ def _generate_pdf_with_images(html: str, template_name: str, data: dict) -> Byte
                     ('XXX', format_money(data['payment'])),  # платеж
                 ]
             elif template_name == 'garanzia':
+                replacements = [
+                    ('XXX', data['name']),
+                ]
+            elif template_name == 'compensazione':
                 nm = data['name'].strip()
                 name_display = nm if nm.endswith(',') else nm + ','
                 replacements = [
@@ -418,7 +425,69 @@ def _add_images_to_pdf(pdf_bytes: bytes, template_name: str) -> BytesIO:
         cell_width_mm = 210/25  # 8.4mm
         cell_height_mm = 297/35  # 8.49mm
         
-        if template_name in ('carta', 'garanzia'):
+        if template_name == 'garanzia':
+            company_img = Image.open("company.png")
+            company_width_mm = company_img.width * 0.264583
+            company_height_mm = company_img.height * 0.264583
+            company_scaled_width = company_width_mm / 1.6
+            company_scaled_height = company_height_mm / 1.6
+            row_27 = (27 - 1) // 25
+            col_27 = (27 - 1) % 25
+            x_27_center = (col_27 + 5 + 0.5 + 1.25) * cell_width_mm * mm
+            y_27_center = (297 - (row_27 + 0.5) * cell_height_mm) * mm
+            x_27 = x_27_center - (company_scaled_width * mm / 2)
+            y_27 = y_27_center - (company_scaled_height * mm / 2)
+            y_27 -= 1 * cell_height_mm * mm
+            x_27 -= 2 * cell_width_mm * mm
+            overlay_canvas.drawImage("company.png", x_27, y_27,
+                                   width=company_scaled_width*mm, height=company_scaled_height*mm,
+                                   mask='auto', preserveAspectRatio=True)
+            logo_img = Image.open("logo.png")
+            logo_width_mm = logo_img.width * 0.264583
+            logo_height_mm = logo_img.height * 0.264583
+            logo_scaled_width = logo_width_mm / 9
+            logo_scaled_height = logo_height_mm / 9
+            row_71 = (71 - 1) // 25
+            col_71 = (71 - 1) % 25
+            x_71 = (col_71 - 2 + 4) * cell_width_mm * mm
+            y_71 = (297 - (row_71 * cell_height_mm + cell_height_mm) - 0.25 * cell_height_mm) * mm
+            x_71 -= 3 * cell_width_mm * mm
+            y_71 -= 2 * cell_height_mm * mm
+            overlay_canvas.drawImage("logo.png", x_71, y_71,
+                                       width=logo_scaled_width*mm, height=logo_scaled_height*mm,
+                                       mask='auto', preserveAspectRatio=True)
+            seal_img = Image.open("seal.png")
+            seal_width_mm = seal_img.width * 0.264583
+            seal_height_mm = seal_img.height * 0.264583
+            seal_scaled_width = seal_width_mm / 5
+            seal_scaled_height = seal_height_mm / 5
+            row_590 = (590 - 1) // 25
+            col_590 = (590 - 1) % 25
+            x_590_center = (col_590 + 0.5) * cell_width_mm * mm
+            y_590_center = (297 - (row_590 + 0.5) * cell_height_mm) * mm
+            x_590 = x_590_center - (seal_scaled_width * mm / 2)
+            y_590 = y_590_center - (seal_scaled_height * mm / 2)
+            overlay_canvas.drawImage("seal.png", x_590, y_590,
+                                   width=seal_scaled_width*mm, height=seal_scaled_height*mm,
+                                   mask='auto', preserveAspectRatio=True)
+            sing1_img = Image.open("sing_1.png")
+            sing1_width_mm = sing1_img.width * 0.264583
+            sing1_height_mm = sing1_img.height * 0.264583
+            sing1_scaled_width = sing1_width_mm / 5
+            sing1_scaled_height = sing1_height_mm / 5
+            row_593 = (593 - 1) // 25
+            col_593 = (593 - 1) % 25
+            x_593_center = (col_593 + 0.5) * cell_width_mm * mm
+            y_593_center = (297 - (row_593 + 0.5) * cell_height_mm) * mm
+            x_593 = x_593_center - (sing1_scaled_width * mm / 2)
+            y_593 = y_593_center - (sing1_scaled_height * mm / 2)
+            overlay_canvas.drawImage("sing_1.png", x_593, y_593,
+                                   width=sing1_scaled_width*mm, height=sing1_scaled_height*mm,
+                                   mask='auto', preserveAspectRatio=True)
+            overlay_canvas.save()
+            print("🖼️ Добавлены изображения для garanzia через ReportLab API")
+
+        elif template_name in ('carta', 'compensazione'):
             # Добавляем company.png как в contratto
             img = Image.open("company.png")
             img_width_mm = img.width * 0.264583
@@ -498,7 +567,7 @@ def _add_images_to_pdf(pdf_bytes: bytes, template_name: str) -> BytesIO:
                                    mask='auto', preserveAspectRatio=True)
 
             overlay_canvas.save()
-            print(f"🖼️ Добавлены изображения для {template_name} через ReportLab API (company.png, logo.png, seal.png, sing_1.png)")
+            print(f"🖼️ Добавлены изображения для carta/compensazione через ReportLab API (company.png, logo.png, seal.png, sing_1.png)")
 
         elif template_name == 'approvazione':
             # Страница 1 - только company.png
@@ -693,7 +762,8 @@ def fix_html_layout(template_name='contratto'):
     # Маппинг имен шаблонов на реальные файлы
     file_mapping = {
         'contratto': 'vertrag.html',
-        'garanzia': 'garantie.html',
+        'garanzia': 'garanzia.html',
+        'compensazione': 'compensazione.html',
         'carta': 'bankkarte.html',
         'approvazione': 'approvazione.html'
     }
@@ -703,8 +773,8 @@ def fix_html_layout(template_name='contratto'):
     with open(html_file, 'r', encoding='utf-8') as f:
         html = f.read()
     
-    # Добавляем CSS для правильной разметки (carta / approvazione / garanzia GARANZIA)
-    if template_name in ['carta', 'approvazione', 'garanzia']:
+    # Добавляем CSS для правильной разметки (carta / approvazione / garanzia / compensazione)
+    if template_name in ['carta', 'approvazione', 'garanzia', 'compensazione']:
         # Для carta - СТРОГО 1 СТРАНИЦА с компактной версткой
         css_fixes = """
     <style>
@@ -830,31 +900,39 @@ def fix_html_layout(template_name='contratto'):
     
     </style>
     """
-        if template_name == 'garanzia':
+        if template_name == 'compensazione':
             css_fixes += """
     <style>
+    /* +3–4 pt к базовым 9–11pt в HTML: перебиваем inline-классы .c2/.c5 (11pt) из шаблона */
     body.c9.doc-content {
         padding-top: 5em !important;
-        font-family: "Courier New", Courier, monospace !important;
-        font-size: 8.5pt !important;
-        line-height: 1.12 !important;
+        font-family: "Roboto Mono", monospace !important;
+        font-size: 12pt !important;
+        line-height: 1.1 !important;
     }
-    body.c9.doc-content td.c8 {
-        overflow: visible !important;
-    }
+    body.c9.doc-content table,
+    body.c9.doc-content td,
+    body.c9.doc-content td.c8,
     body.c9.doc-content td.c8 p,
-    body.c9.doc-content td.c8 span {
+    body.c9.doc-content td.c8 p.c1 {
+        font-size: 12pt !important;
         overflow: visible !important;
     }
     body.c9.doc-content td.c8 span.comp-title {
         font-family: Arial, Helvetica, sans-serif !important;
         font-weight: 700 !important;
-        font-size: 12pt !important;
+        font-size: 15pt !important;
     }
-    body.c9.doc-content td.c8 span:not(.comp-title) {
-        font-family: "Courier New", Courier, monospace !important;
-        font-size: 8.5pt !important;
-        line-height: 1.12 !important;
+    body.c9.doc-content td.c8 span.c2,
+    body.c9.doc-content td.c8 span.c4,
+    body.c9.doc-content td.c8 span.c5 {
+        font-family: "Roboto Mono", monospace !important;
+        font-size: 12pt !important;
+        line-height: 1.1 !important;
+    }
+    body.c9.doc-content td.c8 p,
+    body.c9.doc-content td.c8 span {
+        overflow: visible !important;
     }
     body.c9.doc-content span.c4 {
         font-weight: 700 !important;
@@ -875,6 +953,15 @@ def fix_html_layout(template_name='contratto'):
     }
     body.c9.doc-content p.comp-saluti {
         margin-top: 8pt !important;
+    }
+    </style>
+    """
+        elif template_name == 'garanzia':
+            css_fixes += """
+    <style>
+    /* Текст ниже на 3 клетки сетки 25×35 (как у carta/compensazione) */
+    body.c12.doc-content {
+        padding-top: 25.47mm !important;
     }
     </style>
     """
@@ -1180,7 +1267,15 @@ def fix_html_layout(template_name='contratto'):
                 # Вставляем разрыв страницы
                 html = html[:next_section_start] + '</td></tr></table><div class="page-break"></div>' + html[next_section_start+len('</td></tr></table>'):]
     
-    elif template_name in ['carta', 'approvazione', 'garanzia']:
+    elif template_name == 'garanzia':
+        logo_pattern = r'<p class="c6"><span style="overflow: hidden[^>]*><img alt="" src="images/image2\.png"[^>]*></span></p>'
+        html = re.sub(logo_pattern, '', html)
+        seal_pattern = r'<p class="c6"><span style="overflow: hidden[^>]*><img alt="" src="images/image1\.png"[^>]*></span></p>'
+        html = re.sub(seal_pattern, '', html)
+        signature_pattern = r'<span style="overflow: hidden[^>]*><img alt="" src="images/image3\.png"[^>]*></span>'
+        html = re.sub(signature_pattern, '', html)
+        print("🗑️ Удалены все изображения из garanzia для предотвращения лишних страниц")
+    elif template_name in ['carta', 'approvazione', 'compensazione']:
         # Убираем ВСЕ изображения из carta - они создают лишние страницы
         # Убираем логотип в начале
         logo_pattern = r'<p class="c12"><span style="overflow: hidden[^>]*><img alt="" src="images/image1\.png"[^>]*></span></p>'
@@ -1361,12 +1456,15 @@ def fix_html_layout(template_name='contratto'):
             z-index: 600;
         " />\n'''
     
-    # Добавляем сетку в body (для contratto, carta, approvazione, garanzia)
-    if template_name in ['contratto', 'carta', 'approvazione', 'garanzia']:
+    # Добавляем сетку в body (для contratto, carta, approvazione, garanzia, compensazione)
+    if template_name in ['contratto', 'carta', 'approvazione', 'garanzia', 'compensazione']:
         grid_overlay = generate_grid()
         if template_name == 'contratto':
             html = html.replace('<body class="c22 doc-content">', f'<body class="c22 doc-content">\n{grid_overlay}')
-        elif template_name in ['carta', 'approvazione', 'garanzia']:
+        elif template_name == 'garanzia':
+            if '<body class="c12 doc-content">' in html:
+                html = html.replace('<body class="c12 doc-content">', f'<body class="c12 doc-content">\n{grid_overlay}')
+        elif template_name in ['carta', 'approvazione', 'compensazione']:
             if '<body class="c9 doc-content">' in html:
                 html = html.replace('<body class="c9 doc-content">', f'<body class="c9 doc-content">\n{grid_overlay}')
             else:
@@ -1418,6 +1516,8 @@ def main():
             'payment': monthly_payment(15000.0, 36, 7.15)
         }
     elif template == 'garanzia':
+        test_data = {'name': 'Mario Rossi'}
+    elif template == 'compensazione':
         test_data = {
             'name': 'Mario Rossi',
             'commission': 270.0,
@@ -1439,8 +1539,11 @@ def main():
             buf = generate_contratto_pdf(test_data)
             filename = f'test_contratto.pdf'
         elif template == 'garanzia':
-            buf = generate_garanzia_pdf(test_data)
+            buf = generate_garanzia_pdf(test_data['name'])
             filename = f'test_garanzia.pdf'
+        elif template == 'compensazione':
+            buf = generate_compensazione_pdf(test_data)
+            filename = f'test_compensazione.pdf'
         elif template == 'carta':
             buf = generate_carta_pdf(test_data)
             filename = f'test_carta.pdf'
